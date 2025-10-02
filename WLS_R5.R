@@ -1,7 +1,5 @@
 setwd("C:/Users/ChaeYoon Shin/OneDrive/Desktop/WLS project")
 
-## Note: covariates to R5, Psychwellbeing_composite added
-
 library(parameters)
 library(dplyr)
 library(ggplot2)
@@ -37,11 +35,8 @@ df2$SocialSupport2_R5 <- rowMeans(df2[, c('Love_social_R5','Listen_social_R5')],
 # SocialParticipation1_R5
 df2$SocialParticipation1_R5 <- rowMeans(df2[, c('Social_friends_R5', 'Social_relatives_R5')], na.rm = TRUE)
 
-
-
 # Marital_status_R5
 df2$Marital_status_R5 <- ifelse(df2$Marital_status_R5 == 1, 1, 0)
-
 
 
 ################################# Variables ################################################
@@ -244,7 +239,6 @@ for (indep_var in unique(final_results$Independent)) {
 write.csv(final_results, "Results/moderation_results_250829.csv", row.names = FALSE)
 
 
-
 # ------------------------- Forest Plot -------------------------
 
 library(dplyr)
@@ -275,7 +269,6 @@ interaction_data_sorted <- interaction_data %>%
 
 max_ci <- max(interaction_data_sorted$CI_95_High)
 
-# 라벨 위치: 전체 max CI_95_High + 여유 공간
 interaction_data_sorted$Significance_x <- max_ci + 0.005
 interaction_data_sorted$Beta_CI_Label_x <- max_ci + 0.011
 
@@ -303,10 +296,9 @@ p <- ggplot(interaction_data_sorted, aes(x = Estimate, y = Independent)) +
   coord_cartesian(
     xlim = c(
       min(interaction_data_sorted$CI_95_Low) - 0.01,
-      max_ci + 0.05# 오른쪽 공간 확보
+      max_ci + 0.05
     )
   )
-
 
 
 ggsave("Results/figures/forest_NeuroticismGPS.pdf", plot = p, width = 8, height = 5, units = "in")
@@ -336,11 +328,9 @@ make_interaction_plot_grouped <- function(indep_var, mod_var, data, outcome_var,
   
   pred_df <- ggpredict(model, terms = c(indep_var, group_var)) %>% as.data.frame()
   
-  
   x_min <- min(pred_df$x)
   x_max <- max(pred_df$x)
   
-  # Low vs High 그룹에서 min/max 위치 예측값 추출
   get_extreme <- function(df, x_val, group_name) {
     df %>% filter(group == group_name) %>% slice_min(abs(x - x_val), n = 1)
   }
@@ -392,76 +382,13 @@ make_interaction_plot_grouped <- function(indep_var, mod_var, data, outcome_var,
 }
 
 plot1 <- make_interaction_plot_grouped(
-  indep_var = "PsychWellbeing_R5",
+  indep_var = "PersonalResource_R5",
   mod_var = "Neuroticism_GPS",
   data = df2,
   outcome_var = "Depression_score_R6",
   COVARS = COVARS
 )
 
-plot1
 
-ggsave("Results/figures/lineInteractionPlot_neuroticismGPS_psychwellbeingR5.pdf",
+ggsave("Results/figures/lineInteractionPlot_neuroticismGPS_personalResourceR5.pdf",
        plot = plot1, width = 8, height = 6, units = "in")
-
-
-################################# Mediation ################################################
-library(mediation)
-library(dplyr)
-
-indep_var <- "DepGPS_composite2" # manually 
-
-results_list <- list()
-
-for (med in moderators) {
-  
-  # Mediator model
-  med_formula <- as.formula(
-    paste(med, "~", indep_var, "+", COVARS, "+", paste0("EV", 1:10, collapse = " + "))
-  )
-  med_model <- lm(med_formula, data = df2)
-  
-  # Outcome model
-  out_formula <- as.formula(
-    paste(outcome, "~", indep_var, "+", med, "+", COVARS, "+", paste0("EV", 1:10, collapse = " + "))
-  )
-  out_model <- lm(out_formula, data = df2)
-  
-  # Mediation analysis
-  med_out <- mediate(
-    med_model, out_model,
-    treat = indep_var,
-    mediator = med,
-    boot = TRUE, sims = 1000
-  )
-  
-  res_df <- data.frame(
-    Independent = indep_var,
-    Mediator = med,
-    ACME = round(med_out$d0, 4),
-    ACME_p = round(med_out$d0.p, 4),
-    ADE = round(med_out$z0, 4),
-    ADE_p = round(med_out$z0.p, 4),
-    Total_Effect = round(med_out$tau.coef, 4),
-    Total_p = round(med_out$tau.p, 4),
-    Prop_Mediated = round(med_out$n0, 4),
-    Prop_Mediated_p = round(med_out$n0.p, 4),
-    stringsAsFactors = FALSE
-  )
-  
-  results_list[[med]] <- res_df
-}
-
-# Combine results
-mediation_results <- bind_rows(results_list)
-
-# FDR correction
-mediation_results$ACME_p_fdr <- p.adjust(mediation_results$ACME_p, method = "fdr")
-mediation_results$ADE_p_fdr <- p.adjust(mediation_results$ADE_p, method = "fdr")
-mediation_results$Prop_Mediated_p_fdr <- p.adjust(mediation_results$Prop_Mediated_p, method = "fdr")
-
-# Sort by 'ACME_p_fdr'
-mediation_results <- mediation_results[order(mediation_results$ACME_p_fdr), ]
-
-#print(mediation_results)
-#write.csv(mediation_results, paste0("Results/mediation_results_", indep_var, "_250723.csv"), row.names = FALSE)
