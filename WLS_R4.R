@@ -1,7 +1,5 @@
 setwd("C:/Users/ChaeYoon Shin/OneDrive/Desktop/WLS project")
 
-## Note: covariates to R4
-
 library(parameters)
 library(dplyr)
 library(ggplot2)
@@ -259,7 +257,6 @@ interaction_data_sorted <- interaction_data %>%
 
 max_ci <- max(interaction_data_sorted$CI_95_High)
 
-# 라벨 위치: 전체 max CI_95_High + 여유 공간
 interaction_data_sorted$Significance_x <- max_ci + 0.005
 interaction_data_sorted$Beta_CI_Label_x <- max_ci + 0.010
 
@@ -287,9 +284,10 @@ p <- ggplot(interaction_data_sorted, aes(x = Estimate, y = Independent)) +
   coord_cartesian(
     xlim = c(
       min(interaction_data_sorted$CI_95_Low) - 0.01,
-      max_ci + 0.05  # 오른쪽 공간 확보
+      max_ci + 0.05  
     )
   )
+
 
 
 ggsave("Results/figures/forest_R4_neuroticismGPS_depressionscoreR6.pdf", plot = p, width = 8, height = 5, units = "in")
