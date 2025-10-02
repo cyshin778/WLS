@@ -1,7 +1,5 @@
 setwd("C:/Users/ChaeYoon Shin/OneDrive/Desktop/WLS project")
 
-## Note: covariates to R5, Psychwellbeing_composite added
-
 library(parameters)
 library(dplyr)
 library(ggplot2)
@@ -77,11 +75,9 @@ indep <- c(PersonalResource, SocialSupport1, SocialSupport2,
            SocialParticipation1, Social_involvement_R5)
 
 
-# ------------------------- 성별 데이터 분리 -------------------------
 df_male <- df2[df2$sex == 1, ]
 df_female <- df2[df2$sex == 2, ]
 
-# ------------------------- 분석 함수 정의 -------------------------
 run_analysis <- function(data, sex_label) {
   
   # ------------------------- Main Effects -------------------------
@@ -243,6 +239,6 @@ p <- ggplot(interaction_data_sorted, aes(x = Estimate, y = Independent)) +
 ggsave(paste0("Results/figures/forest_neuroticismGPS_", sex_label, ".pdf"), plot = p, width = 8, height = 6, units = "in")
 }
 
-# ------------------------- 성별별 분석 실행 -------------------------
 run_analysis(df_male, "male")
 run_analysis(df_female, "female")
+
